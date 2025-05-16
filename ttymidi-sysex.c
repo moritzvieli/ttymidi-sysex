@@ -87,7 +87,7 @@
 #include <linux/serial.h>
 #include <linux/ioctl.h>
 #include <asm/ioctls.h>
-#include <asm/termbits.h>
+#include <sys/ioctl.h>
 
 #define FALSE               0
 #define TRUE                1
@@ -98,6 +98,29 @@
 
 /* change this definition for the correct port */
 //#define _POSIX_SOURCE 1 /* POSIX compliant source */
+
+#ifndef BOTHER
+#define BOTHER 0010000
+#endif
+
+#ifndef TCGETS2
+#define TCGETS2 _IOR('T', 0x2A, struct termios2)
+#endif
+
+#ifndef TCSETS2
+#define TCSETS2 _IOW('T', 0x2B, struct termios2)
+#endif
+
+struct termios2 {
+    tcflag_t c_iflag;
+    tcflag_t c_oflag;
+    tcflag_t c_cflag;
+    tcflag_t c_lflag;
+    cc_t     c_line;
+    cc_t     c_cc[19];
+    speed_t  c_ispeed;
+    speed_t  c_ospeed;
+};
 
 int run;
 int serial;
