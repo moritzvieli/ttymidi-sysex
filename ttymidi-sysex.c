@@ -87,6 +87,7 @@
 #include <linux/serial.h>
 #include <linux/ioctl.h>
 #include <asm/ioctls.h>
+#include <asm/termbits.h>
 
 #define FALSE               0
 #define TRUE                1
