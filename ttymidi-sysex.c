@@ -102,6 +102,9 @@ int run;
 int serial;
 int port_out_id;
 
+// Add a new variable to hold the numeric baud rate
+int numeric_baudrate = 115200;  // Default value
+
 /* --------------------------------------------------------------------- */
 // Program options
 
@@ -160,18 +163,20 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 			if (arg == NULL) break;
 			baud_temp = strtol(arg, NULL, 0);
 			if (baud_temp != EINVAL && baud_temp != ERANGE)
-				switch (baud_temp)
-				{
-					case 1200   : arguments->baudrate = B1200  ; break;
-					case 2400   : arguments->baudrate = B2400  ; break;
-					case 4800   : arguments->baudrate = B4800  ; break;
-					case 9600   : arguments->baudrate = B9600  ; break;
-					case 19200  : arguments->baudrate = B19200 ; break;
-					case 38400  : arguments->baudrate = B38400 ; break;
-					case 57600  : arguments->baudrate = B57600 ; break;
-					case 115200 : arguments->baudrate = B115200; break;
-					default: printf("Baud rate %i is not supported.\n",baud_temp); exit(1);
-				}
+			switch (baud_temp)
+			{
+				case 1200   : arguments->baudrate = B1200  ; break;
+				case 2400   : arguments->baudrate = B2400  ; break;
+				case 4800   : arguments->baudrate = B4800  ; break;
+				case 9600   : arguments->baudrate = B9600  ; break;
+				case 19200  : arguments->baudrate = B19200 ; break;
+				case 38400  : arguments->baudrate = B38400 ; break;
+				case 57600  : arguments->baudrate = B57600 ; break;
+				case 115200 : arguments->baudrate = B115200; break;
+				default:
+					arguments->baudrate = B38400;  // fallback standard
+					break;
+			}
 
 		case ARGP_KEY_ARG:
 		case ARGP_KEY_END:
@@ -658,44 +663,27 @@ int main(int argc, char** argv)  // *new* int to remove compilation warning
 		exit(-1);
 	}
 
-	/* save current serial port settings */
 	tcgetattr(serial, &oldtio);
+    bzero(&newtio, sizeof(newtio));
 
-	/* clear struct for new port settings */
-	bzero(&newtio, sizeof(newtio));
+    newtio.c_cflag = arguments.baudrate | CS8 | CLOCAL | CREAD;
+    newtio.c_iflag = IGNPAR;
+    newtio.c_oflag = 0;
+    newtio.c_lflag = 0;
+    newtio.c_cc[VTIME] = 0;
+    newtio.c_cc[VMIN]  = 1;
 
-	/*
-	 * BAUDRATE : Set bps rate. You could also use cfsetispeed and cfsetospeed.
-	 * CRTSCTS  : output hardware flow control (only used if the cable has
-	 * all necessary lines. See sect. 7 of Serial-HOWTO)
-	 * CS8      : 8n1 (8bit, no parity, 1 stopbit)
-	 * CLOCAL   : local connection, no modem contol
-	 * CREAD    : enable receiving characters
-	 */
-	newtio.c_cflag = arguments.baudrate | CS8 | CLOCAL | CREAD; // CRTSCTS removed
+    tcflush(serial, TCIFLUSH);
+    tcsetattr(serial, TCSANOW, &newtio);
 
-	/*
-	 * IGNPAR  : ignore bytes with parity errors
-	 * ICRNL   : map CR to NL (otherwise a CR input on the other computer
-	 * will not terminate input)
-	 * otherwise make device raw (no other input processing)
-	 */
-	newtio.c_iflag = IGNPAR;
-
-	/* Raw output */
-	newtio.c_oflag = 0;
-
-	/*
-	 * ICANON  : enable canonical input
-	 * disable all echo functionality, and don't send signals to calling program
-	 */
-	newtio.c_lflag = 0; // non-canonical
-
-	/*
-	 * set up: we'll be reading 4 bytes at a time.
-	 */
-	newtio.c_cc[VTIME]    = 0;  /* inter-character timer unused */
-	newtio.c_cc[VMIN]     = 1;  /* blocking read until n character arrives */
+    // Apply custom numeric baudrate if needed
+    struct termios2 tio;
+    ioctl(serial, TCGETS2, &tio);
+    tio.c_cflag &= ~CBAUD;
+    tio.c_cflag |= BOTHER;
+    tio.c_ispeed = numeric_baudrate;
+    tio.c_ospeed = numeric_baudrate;
+    ioctl(serial, TCSETS2, &tio);
 
 	/*
 	 * now clean the modem line and activate the settings for the port
