@@ -186,21 +186,25 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 		case 'b':
 			if (arg == NULL) break;
 			baud_temp = strtol(arg, NULL, 0);
-			if (baud_temp != EINVAL && baud_temp != ERANGE)
-			switch (baud_temp)
-			{
-				case 1200   : arguments->baudrate = B1200  ; break;
-				case 2400   : arguments->baudrate = B2400  ; break;
-				case 4800   : arguments->baudrate = B4800  ; break;
-				case 9600   : arguments->baudrate = B9600  ; break;
-				case 19200  : arguments->baudrate = B19200 ; break;
-				case 38400  : arguments->baudrate = B38400 ; break;
-				case 57600  : arguments->baudrate = B57600 ; break;
-				case 115200 : arguments->baudrate = B115200; break;
-				default:
-					arguments->baudrate = B38400;  // fallback standard
-					break;
+			if (baud_temp > 0) {
+				numeric_baudrate = baud_temp;
+		
+				// Use closest standard symbolic baudrate for basic config
+				switch (baud_temp) {
+					case 1200   : arguments->baudrate = B1200  ; break;
+					case 2400   : arguments->baudrate = B2400  ; break;
+					case 4800   : arguments->baudrate = B4800  ; break;
+					case 9600   : arguments->baudrate = B9600  ; break;
+					case 19200  : arguments->baudrate = B19200 ; break;
+					case 38400  : arguments->baudrate = B38400 ; break;
+					case 57600  : arguments->baudrate = B57600 ; break;
+					case 115200 : arguments->baudrate = B115200; break;
+					default:
+						arguments->baudrate = B38400;  // default fallback
+						break;
+				}
 			}
+			break;
 
 		case ARGP_KEY_ARG:
 		case ARGP_KEY_END:
