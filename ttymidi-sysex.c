@@ -683,6 +683,9 @@ int main(int argc, char** argv)  // *new* int to remove compilation warning
 	 *  want to get killed if linenoise sends CTRL-C.
 	 */
 
+	printf("Attempting to open serial port: %s\n", arguments.serialdevice);
+	fflush(stdout);
+
 	serial = open(arguments.serialdevice, O_RDWR | O_NOCTTY );
 
 	if (serial < 0)
