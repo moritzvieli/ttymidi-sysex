@@ -713,6 +713,9 @@ int main(int argc, char** argv)  // *new* int to remove compilation warning
     tio.c_ospeed = numeric_baudrate;
     ioctl(serial, TCSETS2, &tio);
 
+	printf("Serial port '%s' opened at %d baud\n", arguments.serialdevice, numeric_baudrate);
+	fflush(stdout);  // optional, to flush immediately
+
 	/*
 	 * now clean the modem line and activate the settings for the port
 	 */
